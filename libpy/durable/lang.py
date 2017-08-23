@@ -1,5 +1,6 @@
 from . import engine
 from . import interface
+from common import _start_functions, _rulesets, _rule_stack, _ruleset_stack
 
 class avalue(object):
 
@@ -646,29 +647,12 @@ s = value('$s')
 item = value('$i', '$i')
 c = closure()
 
-_rule_stack = []
-_ruleset_stack = []
-_rulesets = []
-_start_functions = []
-
 def create_queue(ruleset_name, database = None, state_cache_size = 1024):
     return engine.Queue(ruleset_name, database, state_cache_size)
 
-def create_host(databases = None, state_cache_size = 1024):
-    ruleset_definitions = {}
-    for rset in _rulesets:
-        ruleset_name, ruleset_definition = rset.define()
-        ruleset_definitions[ruleset_name] = ruleset_definition
-        
-    main_host = engine.Host(ruleset_definitions, databases, state_cache_size)
-    for start in _start_functions:
-        start(main_host)
-
-    main_host.run()
-    return main_host
 
 def run_all(databases = None, host_name = '127.0.0.1', port = 5000, routing_rules = None, run = None, state_cache_size = 1024):
-    main_host = create_host(databases, state_cache_size)
+    main_host = interface.create_host(databases, state_cache_size)
     main_app = interface.Application(main_host, host_name, port, routing_rules, run)
     main_app.run()
 

@@ -938,7 +938,6 @@ class Host(object):
     def __init__(self, ruleset_definitions = None, databases = None, state_cache_size = 1024):
         if not databases:
             databases = [{'host': 'localhost', 'port': 6379, 'password': None, 'db': 0}]
-            
         self._ruleset_directory = {}
         self._ruleset_list = []
         self._databases = databases
@@ -1021,12 +1020,10 @@ class Host(object):
     def register_rulesets(self, parent_name, ruleset_definitions):
         rulesets = Ruleset.create_rulesets(parent_name, self, ruleset_definitions, self._state_cache_size)
         for ruleset_name, ruleset in rulesets.items():
-            if ruleset_name in self._ruleset_directory:
-                raise Exception('Ruleset with name {0} already registered'.format(ruleset_name))
-            else:    
-                self._ruleset_directory[ruleset_name] = ruleset
-                self._ruleset_list.append(ruleset)
-                ruleset.bind(self._databases)
+            print "Register ruleset: ", ruleset_name
+            self._ruleset_directory[ruleset_name] = ruleset
+            self._ruleset_list.append(ruleset)
+            ruleset.bind(self._databases)
 
         return list(rulesets.keys())
 

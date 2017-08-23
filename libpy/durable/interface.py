@@ -5,9 +5,14 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.wsgi import SharedDataMiddleware
+from flask_httpauth import HTTPBasicAuth
 from werkzeug.serving import run_simple
 from werkzeug.serving import make_ssl_devcert
+from werkzeug.utils import secure_filename
+from common import _start_functions, _rulesets
 
+UPLOAD_FOLDER = 'rules/'
+auth = HTTPBasicAuth()
 
 class Application(object):
 
@@ -26,7 +31,12 @@ class Application(object):
         routing_rules.append(Rule('/<ruleset_name>/events/<sid>', endpoint=self._events_request))
         routing_rules.append(Rule('/<ruleset_name>/facts', endpoint=self._default_facts_request))
         routing_rules.append(Rule('/<ruleset_name>/facts/<sid>', endpoint=self._facts_request))
+        routing_rules.append(Rule('/<user_name>/password', endpoint=self._reset_password))
         self._url_map = Map(routing_rules)
+
+    def allowed_file(self, filename):
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in ['py']
 
     def _ruleset_definition_request(self, environ, start_response, ruleset_name):
         def encode_promise(obj):
@@ -39,8 +49,13 @@ class Application(object):
             result = self._host.get_ruleset(ruleset_name)
             return Response(json.dumps(result.get_definition(), default=encode_promise))(environ, start_response)
         elif request.method == 'POST':
-            ruleset_definition = json.loads(request.stream.read().decode('utf-8'))
-            self._host.set_ruleset(ruleset_name, ruleset_definition)
+            # curl -X POST http://127.0.0.1:5000/test/definition -F "file=@testimport.py"
+            file = request.files['file']
+            if file and self.allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(UPLOAD_FOLDER, filename))
+            execfile(UPLOAD_FOLDER + filename)
+            self._host = create_host()
 
         return Response()(environ, start_response)
 
@@ -114,6 +129,8 @@ class Application(object):
             return e
     
     def run(self):
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(UPLOAD_FOLDER)
         if self._run:
             self._run(self._host, self)
         elif self._port != 443:
@@ -122,3 +139,17 @@ class Application(object):
             make_ssl_devcert('key', host = self._host_name)
             run_simple(self._host_name, self._port, self, threaded = True, ssl_context = ('key.crt', 'key.key'))
 
+
+
+def create_host(databases=None, state_cache_size=1024):
+    ruleset_definitions = {}
+    for rset in _rulesets:
+        ruleset_name, ruleset_definition = rset.define()
+        ruleset_definitions[ruleset_name] = ruleset_definition
+
+    main_host = engine.Host(ruleset_definitions, databases, state_cache_size)
+    for start in _start_functions:
+        start(main_host)
+
+    main_host.run()
+    return main_host
