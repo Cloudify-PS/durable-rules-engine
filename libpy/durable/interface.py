@@ -3,16 +3,21 @@ import json
 from . import engine
 from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import HTTPException, NotFound
-from werkzeug.wsgi import SharedDataMiddleware
+from werkzeug.exceptions import HTTPException
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.serving import run_simple
 from werkzeug.serving import make_ssl_devcert
 from werkzeug.utils import secure_filename
+from werkzeug.http import parse_authorization_header
 from common import _start_functions, _rulesets
 
 UPLOAD_FOLDER = 'rules/'
 auth = HTTPBasicAuth()
+users = {
+    "admin": "admin"
+}
+
+
 
 class Application(object):
 
@@ -34,9 +39,22 @@ class Application(object):
         routing_rules.append(Rule('/<user_name>/password', endpoint=self._reset_password))
         self._url_map = Map(routing_rules)
 
-    def allowed_file(self, filename):
+    def _allowed_file(self, filename):
         return '.' in filename and \
                filename.rsplit('.', 1)[1].lower() in ['py']
+
+    def _authorize(self, request, environ, start_response):
+        print "Authorize"
+        if request.headers.get('Authorization'):
+            credentials = parse_authorization_header(
+                request.headers.get('Authorization'))
+            if not credentials or not \
+                    (credentials.type == 'basic'
+                     and credentials.password == users[credentials.username]):
+                return Response('Not Authorized', status=403)
+            return credentials
+        else:
+            return Response('Not Authorized', status=403)
 
     def _ruleset_definition_request(self, environ, start_response, ruleset_name):
         def encode_promise(obj):
@@ -50,13 +68,28 @@ class Application(object):
             return Response(json.dumps(result.get_definition(), default=encode_promise))(environ, start_response)
         elif request.method == 'POST':
             # curl -X POST http://127.0.0.1:5000/test/definition -F "file=@testimport.py"
+            response = self._authorize(request, environ, start_response)
+            if isinstance(response, Response):
+                return response(environ, start_response)
             file = request.files['file']
-            if file and self.allowed_file(file.filename):
+            if file and self._allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
             execfile(UPLOAD_FOLDER + filename)
+            self._host._execute = False
             self._host = create_host()
 
+        return Response()(environ, start_response)
+
+    def _reset_password(self, environ, start_response, user_name):
+        request = Request(environ)
+        response = self._authorize(request, environ, start_response)
+        if isinstance(response, Response):
+            return response(environ, start_response)
+        if response.username != user_name:
+            return Response('Not Authorized', status=403)(environ, start_response)
+        payload = json.loads(request.stream.read().decode('utf-8'))
+        users[user_name] = payload['password']
         return Response()(environ, start_response)
 
     def _state_request(self, environ, start_response, ruleset_name, sid):
@@ -138,7 +171,6 @@ class Application(object):
         else:
             make_ssl_devcert('key', host = self._host_name)
             run_simple(self._host_name, self._port, self, threaded = True, ssl_context = ('key.crt', 'key.key'))
-
 
 
 def create_host(databases=None, state_cache_size=1024):

@@ -942,6 +942,7 @@ class Host(object):
         self._ruleset_list = []
         self._databases = databases
         self._state_cache_size = state_cache_size
+        self._execute = True
         if ruleset_definitions:
             self.register_rulesets(None, ruleset_definitions)
 
@@ -1020,7 +1021,6 @@ class Host(object):
     def register_rulesets(self, parent_name, ruleset_definitions):
         rulesets = Ruleset.create_rulesets(parent_name, self, ruleset_definitions, self._state_cache_size)
         for ruleset_name, ruleset in rulesets.items():
-            print "Register ruleset: ", ruleset_name
             self._ruleset_directory[ruleset_name] = ruleset
             self._ruleset_list.append(ruleset)
             ruleset.bind(self._databases)
@@ -1035,6 +1035,8 @@ class Host(object):
                     if str(e).find('306') == -1:
                         print('Exiting {0}'.format(str(e)))
                         os._exit(1)
+                elif not self._execute:
+                    return
                 elif not w:
                     inner_wait = False
 
@@ -1074,8 +1076,6 @@ class Host(object):
                     self._t_timer = threading.Thread(target = dispatch_timers, args = ((index + 1) % len(self._ruleset_list), inner_wait, ))
                     self._t_timer.daemon = True
                     self._t_timer.start()
-
-
 
             if not len(self._ruleset_list):
                 self._t_timer = threading.Timer(0.5, dispatch_timers, (0, False, ))
