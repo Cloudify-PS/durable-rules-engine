@@ -18,7 +18,6 @@ users = {
 }
 
 
-
 class Application(object):
 
     def __init__(self, host, host_name, port, routing_rules = None, run = None):
@@ -29,6 +28,8 @@ class Application(object):
         if not routing_rules:
             routing_rules = []
 
+        routing_rules.append(Rule('/rulesets', endpoint=self._list_rulesets))
+        routing_rules.append(Rule('/rulesets/events', endpoint=self._all_events_request))
         routing_rules.append(Rule('/<ruleset_name>/definition', endpoint=self._ruleset_definition_request))
         routing_rules.append(Rule('/<ruleset_name>/state', endpoint=self._default_state_request))
         routing_rules.append(Rule('/<ruleset_name>/state/<sid>', endpoint=self._state_request))
@@ -78,8 +79,16 @@ class Application(object):
             execfile(UPLOAD_FOLDER + filename)
             self._host._execute = False
             self._host = create_host()
-
+        elif request.method == 'DELETE':
+            response = self._authorize(request, environ, start_response)
+            if isinstance(response, Response):
+                return response(environ, start_response)
+            self._host.delete_ruleset(ruleset_name)
         return Response()(environ, start_response)
+
+    def _list_rulesets(self, environ, start_response):
+        result = self._host.list_rulesets()
+        return Response(json.dumps(result.get_definition()))(environ, start_response)
 
     def _reset_password(self, environ, start_response, user_name):
         request = Request(environ)
@@ -132,6 +141,15 @@ class Application(object):
             result = self._host.post(ruleset_name, message)
             return Response(json.dumps({'outcome': result}))(environ, start_response)
 
+    def _all_events_request(self, environ, start_response):
+        request = Request(environ)
+        result = None
+        if request.method == 'POST':
+            message = json.loads(request.stream.read().decode('utf-8'))
+            for ruleset_name in self._host.list_rulesets():
+                result = self._host.post(ruleset_name, message)
+            return Response(json.dumps({'outcome': result}))(environ, start_response)
+
     def _facts_request(self, environ, start_response, ruleset_name, sid):
         request = Request(environ)
         result = None
@@ -160,7 +178,7 @@ class Application(object):
             return endpoint(environ, start_response, **values)
         except HTTPException as e:
             return e
-    
+
     def run(self):
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(UPLOAD_FOLDER)

@@ -963,6 +963,14 @@ class Host(object):
             self.register_rulesets(None, ruleset_definition)
             return self._ruleset_directory[ruleset_name]
 
+    def delete_ruleset(self, ruleset_name):
+        if ruleset_name in self._ruleset_directory:
+            self._ruleset_directory.pop(ruleset_name)
+            self._ruleset_list.remove(ruleset_name)
+
+    def list_rulesets(self):
+        return self._ruleset_list
+
     def set_ruleset(self, ruleset_name, ruleset_definition):
         self.register_rulesets(None, ruleset_definition)
         self.save_ruleset(ruleset_name, ruleset_definition)
