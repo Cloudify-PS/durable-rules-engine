@@ -79,12 +79,14 @@ class Application(object):
             execfile(UPLOAD_FOLDER + filename)
             self._host._execute = False
             self._host = create_host()
+            result = { "Rulests registered": self._host.list_rulesets()}
         elif request.method == 'DELETE':
             response = self._authorize(request, environ, start_response)
             if isinstance(response, Response):
                 return response(environ, start_response)
             self._host.delete_ruleset(ruleset_name)
-        return Response()(environ, start_response)
+            result = {"Rulests registered": self._host.list_rulesets()}
+        return Response(json.dumps(result))(environ, start_response)
 
     def _list_rulesets(self, environ, start_response):
         result = self._host.list_rulesets()

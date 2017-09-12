@@ -969,7 +969,7 @@ class Host(object):
             self._ruleset_list.remove(ruleset_name)
 
     def list_rulesets(self):
-        return self._ruleset_list
+        return self._ruleset_directory.keys()
 
     def set_ruleset(self, ruleset_name, ruleset_definition):
         self.register_rulesets(None, ruleset_definition)
