@@ -88,7 +88,7 @@ class Application(object):
 
     def _list_rulesets(self, environ, start_response):
         result = self._host.list_rulesets()
-        return Response(json.dumps(result.get_definition()))(environ, start_response)
+        return Response(json.dumps(result))(environ, start_response)
 
     def _reset_password(self, environ, start_response, user_name):
         request = Request(environ)
