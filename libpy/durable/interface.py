@@ -78,7 +78,8 @@ class Application(object):
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
             execfile(UPLOAD_FOLDER + filename)
             self._host._execute = False
-            self._host = create_host()
+            db = self._host._databases
+            self._host = create_host(db)
             result = { "Rulests registered": self._host.list_rulesets()}
         elif request.method == 'DELETE':
             response = self._authorize(request, environ, start_response)
