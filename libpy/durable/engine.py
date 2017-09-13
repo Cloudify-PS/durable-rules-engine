@@ -943,6 +943,7 @@ class Host(object):
         self._databases = databases
         self._state_cache_size = state_cache_size
         self._execute = True
+        print ruleset_definitions
         if ruleset_definitions:
             self.register_rulesets(None, ruleset_definitions)
 
@@ -966,7 +967,6 @@ class Host(object):
     def delete_ruleset(self, ruleset_name):
         if ruleset_name in self._ruleset_directory:
             self._ruleset_directory.pop(ruleset_name)
-            self._ruleset_list.remove(ruleset_name)
 
     def list_rulesets(self):
         return self._ruleset_directory.keys()

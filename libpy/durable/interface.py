@@ -80,7 +80,7 @@ class Application(object):
             self._host._execute = False
             db = self._host._databases
             self._host = create_host(db)
-            result = { "Rulests registered": self._host.list_rulesets()}
+            result = {"Rulests registered": self._host.list_rulesets()}
         elif request.method == 'DELETE':
             response = self._authorize(request, environ, start_response)
             if isinstance(response, Response):
