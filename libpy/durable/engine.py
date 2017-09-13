@@ -1049,7 +1049,7 @@ class Host(object):
                     inner_wait = False
 
                 if (index == (len(self._ruleset_list) -1)) and inner_wait:
-                    self._d_timer = threading.Timer(0.25, dispatch_ruleset, ((index + 1) % len(self._ruleset_list), inner_wait, ))
+                    self._d_timer = threading.Timer(3, dispatch_ruleset, ((index + 1) % len(self._ruleset_list), inner_wait, ))
                     self._d_timer.daemon = True
                     self._d_timer.start()
                 else:
@@ -1058,7 +1058,7 @@ class Host(object):
                     self._d_timer.start()
 
             if not len(self._ruleset_list):
-                self._d_timer = threading.Timer(0.5, dispatch_ruleset, (0, False, ))
+                self._d_timer = threading.Timer(6, dispatch_ruleset, (0, False, ))
                 self._d_timer.daemon = True
                 self._d_timer.start()
             else: 
@@ -1077,7 +1077,7 @@ class Host(object):
                     inner_wait = False
 
                 if (index == (len(self._ruleset_list) -1)) and inner_wait:
-                    self._t_timer = threading.Timer(0.25, dispatch_timers, ((index + 1) % len(self._ruleset_list), inner_wait, ))
+                    self._t_timer = threading.Timer(3, dispatch_timers, ((index + 1) % len(self._ruleset_list), inner_wait, ))
                     self._t_timer.daemon = True
                     self._t_timer.start()
                 else:
@@ -1086,7 +1086,7 @@ class Host(object):
                     self._t_timer.start()
 
             if not len(self._ruleset_list):
-                self._t_timer = threading.Timer(0.5, dispatch_timers, (0, False, ))
+                self._t_timer = threading.Timer(6, dispatch_timers, (0, False, ))
                 self._t_timer.daemon = True
                 self._t_timer.start()
             else: 
@@ -1097,10 +1097,10 @@ class Host(object):
                 ruleset.dispatch_timers(callback)
 
 
-        self._d_timer = threading.Timer(0.1, dispatch_ruleset, (0, False, ))
+        self._d_timer = threading.Timer(1, dispatch_ruleset, (0, False, ))
         self._d_timer.daemon = True
         self._d_timer.start()
-        self._t_timer = threading.Timer(0.1, dispatch_timers, (0, False, ))
+        self._t_timer = threading.Timer(1, dispatch_timers, (0, False, ))
         self._t_timer.daemon = True
         self._t_timer.start()
 
