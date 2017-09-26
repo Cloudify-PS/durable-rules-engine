@@ -960,9 +960,7 @@ class Host(object):
         if ruleset_name in self._ruleset_directory:
             return self._ruleset_directory[ruleset_name]
         else:
-            ruleset_definition = self.load_ruleset(ruleset_name)
-            self.register_rulesets(None, ruleset_definition)
-            return self._ruleset_directory[ruleset_name]
+            return None
 
     def delete_ruleset(self, ruleset_name):
         if ruleset_name in self._ruleset_directory:

@@ -67,7 +67,7 @@ setup (
         'Programming Language :: Python :: 3.6',
     ],
     keywords='rules engine rete forward chaining event stream state machine workflow streaming analytics',
-    install_requires=['werkzeug'],
+    install_requires=['werkzeug', 'flasgger'],
     packages = ['durable'],
     package_dir = {'': 'libpy'},
     libraries = [rules_lib],
